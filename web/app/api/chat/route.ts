@@ -1,4 +1,4 @@
-import { streamText, stepCountIs } from "ai";
+import { streamText, stepCountIs, convertToModelMessages } from "ai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { saintsTools } from "@/lib/ai-tools";
 
@@ -26,7 +26,7 @@ When answering questions:
 - The Saints won Super Bowl XLIV after the 2009 season, defeating the Indianapolis Colts 31-17
 
 Keep responses concise but informative. Use data to back up your answers.`,
-    messages,
+    messages: await convertToModelMessages(messages),
     tools: saintsTools,
     stopWhen: stepCountIs(5),
   });
