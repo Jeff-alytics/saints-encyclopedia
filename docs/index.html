@@ -1,1 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Saints Football Encyclopedia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 
+<style>
+:root {
+  --gold:   #D3BC8D;
+  --black:  #0a0a0a;
+  --smoke:  #111214;
+  --panel:  #17191d;
+  --border: #2a2d32;
+  --muted:  #4a4e57;
+  --text:   #e8e4dc;
+  --dim:    #7a7f8a;
+  --pass:   #4A9EFF;
+  --rush:   #48C77A;
+  --rec:    #FF7A4A;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--black);
+  color: var(--text);
+  font-family: 'IBM Plex Sans', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── HEADER ─────────────────────────────────────────────────────────── */
+header {
+  position: relative;
+  padding: 36px 40px 28px;
+  border-bottom: 1px solid var(--border);
+  background: var(--smoke);
+  display: flex;
+  align-items: flex-end;
+  gap: 32px;
+  overflow: hidden;
+}
+header::before {
+  content: 'WHO DAT';
+  position: absolute;
+  right: -10px; top: 50%;
+  transform: translateY(-50%);
+  font-family: 'Oswald', sans-serif;
+  font-size: 120px; font-weight: 700;
+  color: rgba(211,188,141,0.04);
+  letter-spacing: 8px; white-space: nowrap;
+  pointer-events: none; user-select: none;
+}
+.fleur {
+  font-size: 56px; line-height: 1;
+  filter: drop-shadow(0 0 20px rgba(211,188,141,0.3));
+  animation: pulse 3s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%,100% { filter: drop-shadow(0 0 20px rgba(211,188,141,0.3)); }
+  50%      { filter: drop-shadow(0 0 35px rgba(211,188,141,0.55)); }
+}
+.header-text h1 {
+  font-family: 'Oswald', sans-serif;
+  font-size: 38px; font-weight: 700;
+  color: var(--gold); letter-spacing: 3px;
+  text-transform: uppercase; line-height: 1;
+}
+.header-text .subtitle {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; color: var(--muted);
+  letter-spacing: 4px; text-transform: uppercase; margin-top: 6px;
+}
+.header-meta {
+  margin-left: auto; text-align: right;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; color: var(--muted); line-height: 1.8;
+}
+.header-meta span { color: var(--gold); font-weight: 500; }
+
+/* ── LOADING / ERROR ─────────────────────────────────────────────────── */
+#loading-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: calc(100vh - 130px);
+  gap: 20px;
+}
+.spinner {
+  width: 40px; height: 40px;
+  border: 2px solid var(--border);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px; color: var(--dim); letter-spacing: 2px;
+}
+
+#error-screen {
+  display: none;
+  flex-direction: column; align-items: center;
+  justify-content: center;
+  height: calc(100vh - 130px);
+  gap: 16px; text-align: center; padding: 40px;
+}
+#error-screen .err-icon { font-size: 40px; }
+#error-screen p {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px; color: var(--dim); line-height: 1.8;
+}
+#error-screen code {
+  background: var(--panel); padding: 2px 8px;
+  border-radius: 2px; color: var(--gold);
+}
+
+/* ── MAIN LAYOUT ─────────────────────────────────────────────────────── */
+#app { display: none; }
+#app.visible { display: block; }
+
+.layout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  min-height: calc(100vh - 130px);
+}
+
+/* ── SIDEBAR ─────────────────────────────────────────────────────────── */
+.sidebar {
+  background: var(--smoke);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+}
+.sidebar-header {
+  padding: 20px 20px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.sidebar-header h2 {
+  font-family: 'Oswald', sans-serif;
+  font-size: 13px; letter-spacing: 3px;
+  color: var(--dim); text-transform: uppercase;
+}
+.search-wrap {
+  padding: 14px 16px; border-bottom: 1px solid var(--border);
+}
+.search-wrap input {
+  width: 100%; background: var(--panel);
+  border: 1px solid var(--border); border-radius: 3px;
+  padding: 8px 12px; color: var(--text);
+  font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+  outline: none; transition: border-color 0.2s;
+}
+.search-wrap input:focus { border-color: var(--gold); }
+.search-wrap input::placeholder { color: var(--muted); }
+.filter-wrap {
+  padding: 10px 16px; border-bottom: 1px solid var(--border);
+  display: flex; gap: 6px; flex-wrap: wrap;
+}
+.filter-btn {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
+  padding: 5px 10px; border-radius: 2px;
+  border: 1px solid var(--border); background: transparent;
+  color: var(--dim); cursor: pointer; transition: all 0.15s;
+}
+.filter-btn:hover { border-color: var(--dim); color: var(--text); }
+.filter-btn.active[data-type="passing"]   { border-color:var(--pass);color:var(--pass);background:rgba(74,158,255,0.08); }
+.filter-btn.active[data-type="rushing"]   { border-color:var(--rush);color:var(--rush);background:rgba(72,199,122,0.08); }
+.filter-btn.active[data-type="receiving"] { border-color:var(--rec);color:var(--rec);background:rgba(255,122,74,0.08); }
+.filter-btn.active[data-type="all"]       { border-color:var(--gold);color:var(--gold);background:rgba(211,188,141,0.08); }
+
+.player-list { flex: 1; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+
+.player-item {
+  padding: 13px 16px; border-bottom: 1px solid rgba(42,45,50,0.5);
+  cursor: pointer; transition: background 0.15s;
+  display: flex; align-items: center; gap: 10px;
+}
+.player-item:hover  { background: rgba(211,188,141,0.04); }
+.player-item.active { background: rgba(211,188,141,0.08); border-left: 2px solid var(--gold); }
+.player-avatar {
+  width:30px;height:30px;border-radius:2px;background:var(--panel);
+  border:1px solid var(--border);display:flex;align-items:center;
+  justify-content:center;font-family:'Oswald',sans-serif;
+  font-size:11px;font-weight:600;color:var(--gold);flex-shrink:0;
+}
+.player-info { flex:1; min-width:0; }
+.player-info .name {
+  font-family:'IBM Plex Sans',sans-serif;font-size:13px;font-weight:500;
+  color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.player-info .meta { font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim);margin-top:2px; }
+.player-badges { display:flex;gap:3px; }
+.badge { width:6px;height:6px;border-radius:50%; }
+.badge.pass { background:var(--pass); }
+.badge.rush { background:var(--rush); }
+.badge.rec  { background:var(--rec); }
+
+/* ── MAIN PANEL ──────────────────────────────────────────────────────── */
+.main-panel { background:var(--black);padding:36px 40px;overflow-y:auto; }
+
+.overview-grid {
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+  gap:16px;margin-bottom:36px;
+}
+.stat-card {
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:3px;padding:20px;position:relative;overflow:hidden;
+}
+.stat-card::after { content:'';position:absolute;top:0;left:0;right:0;height:2px; }
+.stat-card.pass::after { background:var(--pass); }
+.stat-card.rush::after { background:var(--rush); }
+.stat-card.rec::after  { background:var(--rec); }
+.stat-card.gold::after { background:var(--gold); }
+.stat-card .label { font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px; }
+.stat-card .value { font-family:'Oswald',sans-serif;font-size:32px;font-weight:600;color:var(--text);line-height:1; }
+.stat-card .value.gold { color:var(--gold); }
+.stat-card .sub { font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);margin-top:6px; }
+
+.section-title {
+  font-family:'Oswald',sans-serif;font-size:14px;letter-spacing:3px;
+  text-transform:uppercase;color:var(--gold);margin-bottom:16px;
+  display:flex;align-items:center;gap:12px;
+}
+.section-title::after { content:'';flex:1;height:1px;background:var(--border); }
+
+.player-header { display:flex;align-items:flex-start;gap:24px;margin-bottom:32px;padding-bottom:24px;border-bottom:1px solid var(--border); }
+.player-number { font-family:'Oswald',sans-serif;font-size:80px;font-weight:700;color:rgba(211,188,141,0.12);line-height:1;flex-shrink:0; }
+.player-title h2 { font-family:'Oswald',sans-serif;font-size:36px;font-weight:600;color:var(--text);letter-spacing:1px; }
+.player-title .player-seasons { font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--dim);margin-top:6px;letter-spacing:1px; }
+.player-title .stat-pills { display:flex;gap:6px;margin-top:10px;flex-wrap:wrap; }
+
+.pill { font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1px;padding:4px 10px;border-radius:2px;text-transform:uppercase; }
+.pill.pass { background:rgba(74,158,255,0.15);color:var(--pass); }
+.pill.rush { background:rgba(72,199,122,0.15);color:var(--rush); }
+.pill.rec  { background:rgba(255,122,74,0.15);color:var(--rec); }
+
+.table-wrap { overflow-x:auto;margin-top:12px;border:1px solid var(--border);border-radius:3px; }
+table { width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:11.5px; }
+thead th {
+  background:var(--panel);padding:10px 14px;text-align:left;
+  font-size:10px;letter-spacing:2px;text-transform:uppercase;
+  color:var(--dim);border-bottom:1px solid var(--border);
+  white-space:nowrap;cursor:pointer;user-select:none;transition:color 0.15s;
+}
+thead th:hover { color:var(--gold); }
+thead th.sorted { color:var(--gold); }
+thead th.sorted::after { content:' ↓'; }
+thead th.sorted.asc::after { content:' ↑'; }
+tbody tr { border-bottom:1px solid rgba(42,45,50,0.4);transition:background 0.12s; }
+tbody tr:hover { background:rgba(211,188,141,0.03); }
+tbody tr:last-child { border-bottom:none; }
+td { padding:9px 14px;color:var(--dim);white-space:nowrap; }
+td.highlight { color:var(--text); }
+td.pass-val  { color:var(--pass); }
+td.rush-val  { color:var(--rush); }
+td.rec-val   { color:var(--rec); }
+td.gold-val  { color:var(--gold); }
+.result-W { color:#48C77A;font-weight:500; }
+.result-L { color:#FF5A5A; }
+
+.chart-area { background:var(--panel);border:1px solid var(--border);border-radius:3px;padding:20px;margin-bottom:28px; }
+.bar-chart { display:flex;align-items:flex-end;gap:4px;height:100px;margin-top:16px; }
+.bar-group { display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;min-width:0; }
+.bar { width:100%;border-radius:2px 2px 0 0;min-height:2px;transition:opacity 0.2s;cursor:pointer; }
+.bar:hover { opacity:0.8; }
+.bar-label { font-size:9px;color:var(--muted);transform:rotate(-45deg);transform-origin:center;margin-top:4px;white-space:nowrap; }
+
+.tabs { display:flex;margin-bottom:20px;border-bottom:1px solid var(--border); }
+.tab {
+  font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;
+  padding:10px 18px;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;
+  margin-bottom:-1px;transition:all 0.15s;
+}
+.tab:hover { color:var(--text); }
+.tab.active { color:var(--gold);border-bottom-color:var(--gold); }
+
+.season-select-wrap { display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap; }
+.season-select-wrap label { font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--dim);letter-spacing:2px;text-transform:uppercase; }
+select { background:var(--panel);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:12px;padding:6px 12px;border-radius:3px;outline:none;cursor:pointer;transition:border-color 0.2s; }
+select:focus { border-color:var(--gold); }
+select option { background:var(--panel); }
+
+#overview-panel h2 { font-family:'Oswald',sans-serif;font-size:28px;color:var(--text);margin-bottom:6px; }
+#overview-panel .lead { font-size:13px;color:var(--dim);margin-bottom:32px;font-family:'IBM Plex Mono',monospace; }
+
+@keyframes fadeIn { from { opacity:0;transform:translateY(8px); } to { opacity:1;transform:translateY(0); } }
+.fade-in { animation:fadeIn 0.25s ease forwards; }
+.empty-state { text-align:center;padding:80px 20px;color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:13px; }
+.empty-state .big { font-size:40px;margin-bottom:16px; }
+
+@media (max-width:900px) {
+  .layout { grid-template-columns:1fr; }
+  .sidebar { max-height:40vh; }
+  header { flex-wrap:wrap; }
+  .header-meta { width:100%;text-align:left;margin-left:0;margin-top:12px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="fleur">⚜</div>
+  <div class="header-text">
+    <h1>Saints Encyclopedia</h1>
+    <div class="subtitle">New Orleans Saints · Player Game Log Database</div>
+  </div>
+  <div class="header-meta" id="header-meta">
+    <div>Loading data…</div>
+  </div>
+</header>
+
+<!-- Loading -->
+<div id="loading-screen">
+  <div class="spinner"></div>
+  <div class="loading-text">Loading Saints data…</div>
+</div>
+
+<!-- Error -->
+<div id="error-screen">
+  <div class="err-icon">⚜</div>
+  <p id="error-msg"></p>
+</div>
+
+<!-- App -->
+<div id="app">
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-header"><h2>Players</h2></div>
+      <div class="search-wrap">
+        <input type="text" id="player-search" placeholder="Search players…">
+      </div>
+      <div class="filter-wrap">
+        <button class="filter-btn active" data-type="all">All</button>
+        <button class="filter-btn" data-type="passing">Pass</button>
+        <button class="filter-btn" data-type="rushing">Rush</button>
+        <button class="filter-btn" data-type="receiving">Rec</button>
+      </div>
+      <div class="player-list" id="player-list"></div>
+    </aside>
+    <main class="main-panel" id="main-panel">
+      <div id="overview-panel"></div>
+      <div id="player-panel" style="display:none;"></div>
+    </main>
+  </div>
+</div>
+
+<script>
+// ── STATE ────────────────────────────────────────────────────────────────────
+let DATA = null, selectedPlayer = null, filterType = 'all';
+let searchQuery = '', sortCol = 'game_date', sortAsc = false;
+let activeSeason = 'all', activeTab = 'games';
+
+// ── AUTO-LOAD JSON ────────────────────────────────────────────────────────────
+async function loadData() {
+  try {
+    const res = await fetch('data/saints_dashboard_latest.json');
+    if (!res.ok) throw new Error(`HTTP ${res.status} — data file not found`);
+    DATA = await res.json();
+    initApp();
+  } catch (err) {
+    document.getElementById('loading-screen').style.display = 'none';
+    const es = document.getElementById('error-screen');
+    es.style.display = 'flex';
+    document.getElementById('error-msg').innerHTML =
+      `Could not load data.<br><br>` +
+      `<code>${err.message}</code><br><br>` +
+      `Make sure <code>data/saints_dashboard_latest.json</code> exists in the <code>docs/</code> folder.<br>` +
+      `Run the scraper locally or trigger the GitHub Actions workflow.`;
+  }
+}
+
+function initApp() {
+  document.getElementById('loading-screen').style.display = 'none';
+  document.getElementById('app').classList.add('visible');
+  const m = DATA.meta || {};
+  document.getElementById('header-meta').innerHTML = `
+    <div>Records <span>${(m.total_records||0).toLocaleString()}</span></div>
+    <div>Players <span>${(m.total_players||0).toLocaleString()}</span></div>
+    <div>Seasons <span>${m.seasons_covered?.length ? m.seasons_covered[0]+'–'+m.seasons_covered[m.seasons_covered.length-1] : '—'}</span></div>
+    <div style="margin-top:4px;font-size:9px;color:var(--muted);">Updated ${m.generated ? m.generated.slice(0,10) : '—'}</div>
+  `;
+  renderPlayerList();
+  renderOverview();
+  document.getElementById('player-search').addEventListener('input', e => { searchQuery = e.target.value; renderPlayerList(); });
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      filterType = btn.dataset.type;
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderPlayerList();
+    });
+  });
+}
+
+// ── PLAYER LIST ───────────────────────────────────────────────────────────────
+function getFilteredPlayers() {
+  return (DATA.players||[]).filter(p => {
+    if (searchQuery && !p.player.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+    if (filterType !== 'all' && !p.career_stats?.[filterType]) return false;
+    return true;
+  });
+}
+
+function renderPlayerList() {
+  const list = document.getElementById('player-list');
+  const players = getFilteredPlayers();
+  list.innerHTML = '';
+  if (!players.length) { list.innerHTML = '<div class="empty-state" style="padding:40px 20px;font-size:11px;">No players found</div>'; return; }
+  players.forEach(p => {
+    const initials = p.player.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    const seasons = p.seasons || [];
+    const sr = seasons.length ? (seasons[0]===seasons[seasons.length-1] ? seasons[0] : `${seasons[0]}–${seasons[seasons.length-1]}`) : '';
+    const el = document.createElement('div');
+    el.className = 'player-item' + (selectedPlayer?.player_id===p.player_id ? ' active' : '');
+    el.innerHTML = `
+      <div class="player-avatar">${initials}</div>
+      <div class="player-info">
+        <div class="name">${p.player}</div>
+        <div class="meta">${sr} · ${(p.games||[]).length} games</div>
+      </div>
+      <div class="player-badges">
+        ${p.career_stats?.passing   ? '<div class="badge pass"></div>' : ''}
+        ${p.career_stats?.rushing   ? '<div class="badge rush"></div>' : ''}
+        ${p.career_stats?.receiving ? '<div class="badge rec"></div>'  : ''}
+      </div>`;
+    el.addEventListener('click', () => selectPlayer(p));
+    list.appendChild(el);
+  });
+}
+
+// ── OVERVIEW ──────────────────────────────────────────────────────────────────
+function renderOverview() {
+  const panel = document.getElementById('overview-panel');
+  const m = DATA.meta || {};
+  let totalTD=0, totalYds=0;
+  (DATA.games_flat||[]).forEach(g => {
+    totalTD  += (g.pass_td||0)+(g.rush_td||0)+(g.rec_td||0);
+    totalYds += (g.pass_yds||0)+(g.rush_yds||0)+(g.rec_yds||0);
+  });
+  panel.className = 'fade-in';
+  panel.innerHTML = `
+    <h2>New Orleans Saints</h2>
+    <p class="lead">Player-game encyclopedia · Pro Football Reference data</p>
+    <div class="overview-grid">
+      <div class="stat-card gold"><div class="label">Total Records</div><div class="value gold">${(m.total_records||0).toLocaleString()}</div><div class="sub">player-game entries</div></div>
+      <div class="stat-card gold"><div class="label">Players</div><div class="value gold">${(m.total_players||0).toLocaleString()}</div><div class="sub">${m.seasons_covered?.[0]||''}–${m.seasons_covered?.[m.seasons_covered.length-1]||''}</div></div>
+      <div class="stat-card gold"><div class="label">Total TDs</div><div class="value">${totalTD.toLocaleString()}</div><div class="sub">all types</div></div>
+      <div class="stat-card gold"><div class="label">Total Yards</div><div class="value">${totalYds.toLocaleString()}</div><div class="sub">pass + rush + rec</div></div>
+    </div>
+    <div class="section-title">Season-by-Season</div>
+    ${renderSeasonTable(DATA.season_summary||[])}
+  `;
+}
+
+function renderSeasonTable(ss) {
+  if (!ss.length) return '<p style="color:var(--dim);font-size:12px;font-family:monospace;">No season data.</p>';
+  const rows = ss.map(s => {
+    const p=s.stat_types?.passing||{}, r=s.stat_types?.rushing||{}, c=s.stat_types?.receiving||{};
+    return `<tr>
+      <td class="highlight">${s.season}</td>
+      <td class="pass-val">${(p.pass_yds||0).toLocaleString()}</td><td class="pass-val">${p.pass_td||0}</td>
+      <td class="rush-val">${(r.rush_yds||0).toLocaleString()}</td><td class="rush-val">${r.rush_td||0}</td>
+      <td class="rec-val">${(c.rec_yds||0).toLocaleString()}</td><td class="rec-val">${c.rec_td||0}</td>
+    </tr>`;
+  }).join('');
+  return `<div class="table-wrap"><table>
+    <thead><tr><th>Season</th><th>Pass Yds</th><th>Pass TD</th><th>Rush Yds</th><th>Rush TD</th><th>Rec Yds</th><th>Rec TD</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table></div>`;
+}
+
+// ── PLAYER DETAIL ─────────────────────────────────────────────────────────────
+function selectPlayer(p) {
+  selectedPlayer = p; activeSeason = 'all'; activeTab = 'games';
+  sortCol = 'game_date'; sortAsc = false;
+  document.getElementById('overview-panel').style.display = 'none';
+  document.getElementById('player-panel').style.display = 'block';
+  renderPlayerList(); renderPlayerDetail();
+}
+
+function renderPlayerDetail() {
+  const p = selectedPlayer;
+  const panel = document.getElementById('player-panel');
+  const games = p.games || [];
+  const seasons = p.seasons || [];
+
+  let filtered = games;
+  if (activeSeason !== 'all') filtered = filtered.filter(g => String(g.season) === String(activeSeason));
+  if (filterType !== 'all')   filtered = filtered.filter(g => g.stat_type === filterType);
+  if (sortCol) {
+    filtered = [...filtered].sort((a,b) => {
+      let av=a[sortCol]??'', bv=b[sortCol]??'';
+      if (typeof av==='string') av=av.toLowerCase();
+      if (typeof bv==='string') bv=bv.toLowerCase();
+      return (av<bv?-1:av>bv?1:0) * (sortAsc?1:-1);
+    });
+  }
+
+  const seasonOpts = ['<option value="all">All Seasons</option>',
+    ...seasons.map(s=>`<option value="${s}">${s}</option>`)].join('');
+
+  panel.className = 'fade-in';
+  panel.innerHTML = `
+    <div class="player-header">
+      <div class="player-number">#</div>
+      <div class="player-title">
+        <h2>${p.player}</h2>
+        <div class="player-seasons">${seasons.length ? seasons[0]+(seasons[0]!==seasons[seasons.length-1]?'–'+seasons[seasons.length-1]:'') : ''} · ${games.length} career game logs</div>
+        <div class="stat-pills">
+          ${p.career_stats?.passing   ? '<span class="pill pass">Passer</span>'   : ''}
+          ${p.career_stats?.rushing   ? '<span class="pill rush">Rusher</span>'   : ''}
+          ${p.career_stats?.receiving ? '<span class="pill rec">Receiver</span>'  : ''}
+        </div>
+      </div>
+    </div>
+    <div class="section-title">Career Totals</div>
+    <div class="overview-grid">${buildCareerCards(p.career_stats)}</div>
+    <div class="section-title">Game Logs</div>
+    <div class="season-select-wrap">
+      <label>Season</label>
+      <select id="season-sel">${seasonOpts}</select>
+    </div>
+    <div class="tabs">
+      <div class="tab ${activeTab==='games'?'active':''}" data-tab="games">Games</div>
+      <div class="tab ${activeTab==='chart'?'active':''}" data-tab="chart">Season Chart</div>
+    </div>
+    <div id="tab-content">
+      ${activeTab === 'games' ? renderGameTable(filtered) : renderSeasonChart(games)}
+    </div>
+  `;
+
+  panel.querySelector('#season-sel').value = activeSeason;
+  panel.querySelector('#season-sel').addEventListener('change', e => { activeSeason = e.target.value; renderPlayerDetail(); });
+  panel.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => { activeTab = t.dataset.tab; renderPlayerDetail(); }));
+  panel.querySelectorAll('thead th[data-col]').forEach(th => {
+    th.addEventListener('click', () => {
+      const col = th.dataset.col;
+      if (sortCol===col) sortAsc=!sortAsc; else { sortCol=col; sortAsc=false; }
+      renderPlayerDetail();
+    });
+    if (th.dataset.col===sortCol) { th.classList.add('sorted'); if (sortAsc) th.classList.add('asc'); }
+  });
+}
+
+function buildCareerCards(cs) {
+  if (!cs) return '';
+  let html = '';
+  if (cs.passing)   html += `<div class="stat-card pass"><div class="label">Pass Yards</div><div class="value">${(cs.passing.pass_yds||0).toLocaleString()}</div><div class="sub">${(cs.passing.pass_att||0).toLocaleString()} att · ${cs.passing.pass_td||0} TD · ${cs.passing.pass_int||0} INT</div></div>`;
+  if (cs.rushing)   html += `<div class="stat-card rush"><div class="label">Rush Yards</div><div class="value">${(cs.rushing.rush_yds||0).toLocaleString()}</div><div class="sub">${(cs.rushing.rush_att||0).toLocaleString()} att · ${cs.rushing.rush_td||0} TD</div></div>`;
+  if (cs.receiving) html += `<div class="stat-card rec"><div class="label">Rec Yards</div><div class="value">${(cs.receiving.rec_yds||0).toLocaleString()}</div><div class="sub">${cs.receiving.rec||0} rec · ${cs.receiving.rec_td||0} TD</div></div>`;
+  return html;
+}
+
+function renderGameTable(games) {
+  if (!games.length) return '<div class="empty-state"><div class="big">⚜</div>No game logs for this filter.</div>';
+  const types = [...new Set(games.map(g=>g.stat_type))];
+  const cols = [
+    {key:'game_date',     label:'Date',   cls:'highlight'},
+    {key:'season',        label:'Season', cls:''},
+    {key:'week_num',      label:'Wk',     cls:''},
+    {key:'opp',           label:'Opp',    cls:'highlight'},
+    {key:'game_location', label:'H/A',    cls:''},
+    {key:'game_result',   label:'Result', cls:''},
+    {key:'stat_type',     label:'Type',   cls:''},
+  ];
+  if (types.includes('passing'))   cols.push(
+    {key:'pass_att',    label:'Att',   cls:'pass-val'},
+    {key:'pass_cmp',    label:'Cmp',   cls:'pass-val'},
+    {key:'pass_yds',    label:'P Yds', cls:'pass-val'},
+    {key:'pass_td',     label:'P TD',  cls:'gold-val'},
+    {key:'pass_int',    label:'INT',   cls:''},
+    {key:'pass_rating', label:'Rate',  cls:'pass-val'},
+  );
+  if (types.includes('rushing'))   cols.push(
+    {key:'rush_att', label:'Car',   cls:'rush-val'},
+    {key:'rush_yds', label:'R Yds', cls:'rush-val'},
+    {key:'rush_td',  label:'R TD',  cls:'gold-val'},
+  );
+  if (types.includes('receiving')) cols.push(
+    {key:'rec',     label:'Rec',     cls:'rec-val'},
+    {key:'rec_yds', label:'Rec Yds', cls:'rec-val'},
+    {key:'rec_td',  label:'Rec TD',  cls:'gold-val'},
+    {key:'targets', label:'Tgts',    cls:''},
+  );
+  const header = cols.map(c=>`<th data-col="${c.key}">${c.label}</th>`).join('');
+  const rows = games.map(g => '<tr>' + cols.map(c => {
+    let val = g[c.key] ?? '—';
+    if (c.key==='game_result') return `<td><span class="${val.startsWith('W')?'result-W':val.startsWith('L')?'result-L':''}">${val}</span></td>`;
+    if (c.key==='stat_type')  return `<td><span class="pill ${val==='passing'?'pass':val==='rushing'?'rush':'rec'}" style="padding:2px 7px;font-size:9px;">${val.slice(0,4).toUpperCase()}</span></td>`;
+    if (typeof val==='number'&&isNaN(val)) val='—';
+    return `<td class="${c.cls}">${val}</td>`;
+  }).join('') + '</tr>').join('');
+  return `<div class="table-wrap"><table><thead><tr>${header}</tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+function renderSeasonChart(games) {
+  if (!games.length) return '<div class="empty-state"><div class="big">⚜</div>No data for chart.</div>';
+  const by = {};
+  games.forEach(g => {
+    if (!g.season) return;
+    if (!by[g.season]) by[g.season]={pass:0,rush:0,rec:0};
+    by[g.season].pass += g.pass_yds||0;
+    by[g.season].rush += g.rush_yds||0;
+    by[g.season].rec  += g.rec_yds||0;
+  });
+  const years = Object.keys(by).sort();
+  const maxY = Math.max(...years.map(y=>by[y].pass+by[y].rush+by[y].rec), 1);
+  const bars = years.map(yr => {
+    const d=by[yr];
+    return `<div class="bar-group">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:1px;height:90px;justify-content:flex-end;width:100%;">
+        ${d.pass?`<div class="bar" style="background:var(--pass);height:${Math.round(d.pass/maxY*90)}px;" title="${yr} Pass: ${d.pass}"></div>`:''}
+        ${d.rush?`<div class="bar" style="background:var(--rush);height:${Math.round(d.rush/maxY*90)}px;" title="${yr} Rush: ${d.rush}"></div>`:''}
+        ${d.rec ?`<div class="bar" style="background:var(--rec);height:${Math.round(d.rec/maxY*90)}px;"  title="${yr} Rec: ${d.rec}"></div>`:''}
+      </div>
+      <div class="bar-label">${yr}</div>
+    </div>`;
+  }).join('');
+  return `<div class="chart-area">
+    <div style="display:flex;gap:16px;margin-bottom:8px;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1px;color:var(--dim);">
+      <span><span style="color:var(--pass);">■</span> Passing</span>
+      <span><span style="color:var(--rush);">■</span> Rushing</span>
+      <span><span style="color:var(--rec);">■</span> Receiving</span>
+    </div>
+    <div class="bar-chart">${bars}</div>
+  </div>`;
+}
+
+// Kick it off
+loadData();
+</script>
+</body>
+</html>
