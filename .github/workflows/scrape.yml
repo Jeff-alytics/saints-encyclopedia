@@ -54,13 +54,10 @@ jobs:
       - name: Install Python dependencies
         run: pip install -r scraper/requirements.txt
 
-      - name: Install Playwright browsers
-        run: playwright install chromium --with-deps
-
       - name: Run scraper
         env:
-          STATHEAD_SESSION: ${{ secrets.STATHEAD_SESSION }}
           OUTPUT_DIR: docs/data
+          DB_PATH: saints_encyclopedia.db
         run: |
           cd scraper
 
@@ -72,10 +69,10 @@ jobs:
 
           if [ -n "$YEAR" ]; then
             # Explicit year overrides everything
-            ARGS="--year $YEAR"
+            ARGS="--season $YEAR"
           elif [ -n "$START" ]; then
             # Year range
-            ARGS="--start $START"
+            ARGS="--full --start $START"
             [ -n "$END" ] && ARGS="$ARGS --end $END"
           elif [ "$MODE" = "full" ]; then
             ARGS="--full"
@@ -84,8 +81,8 @@ jobs:
             ARGS="--incremental"
           fi
 
-          echo "🏈  Running: python scraper.py $ARGS"
-          python scraper.py $ARGS
+          echo "Running: python pfa_scraper.py $ARGS"
+          python pfa_scraper.py $ARGS
 
       - name: Upload debug artifacts
         if: always()
@@ -100,10 +97,10 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs/data/
+          git add docs/data/ scraper/saints_encyclopedia.db
           # Only commit if something actually changed — skips offseason no-op runs
           if git diff --staged --quiet; then
-            echo "✔  No data changes — skipping commit."
+            echo "No data changes — skipping commit."
           else
             git commit -m "chore: update Saints data [$(date -u '+%Y-%m-%d %H:%M UTC')]"
             git push
