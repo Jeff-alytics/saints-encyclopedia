@@ -2,7 +2,11 @@ session.json
 __pycache__/
 *.pyc
 .env
+.env.local
 *.egg-info/
 dist/
 .DS_Store
 debug/
+web/node_modules/
+web/.next/
+web/.vercel/
