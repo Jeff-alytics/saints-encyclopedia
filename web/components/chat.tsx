@@ -3,13 +3,6 @@
 import { useChat } from "@ai-sdk/react";
 import { useEffect, useRef, useState } from "react";
 
-function getMessageText(parts: { type: string; text?: string }[]): string {
-  return parts
-    .filter((p) => p.type === "text")
-    .map((p) => p.text ?? "")
-    .join("");
-}
-
 export function Chat() {
   const { messages, sendMessage, status } = useChat();
   const [input, setInput] = useState("");
@@ -66,8 +59,19 @@ export function Chat() {
         )}
 
         {messages.map((m) => {
-          const text = getMessageText(m.parts as { type: string; text?: string }[]);
-          if (!text && m.role === "assistant") return null;
+          // Extract text from parts
+          const textParts = m.parts
+            .filter((p): p is { type: "text"; text: string } => p.type === "text")
+            .map((p) => p.text)
+            .join("");
+
+          // For user messages, also check if parts is empty but we can fall back
+          const displayText = textParts || "";
+
+          // Skip assistant messages that have no text yet (e.g. tool-only steps)
+          if (!displayText && m.role === "assistant") return null;
+          if (!displayText && m.role === "user") return null;
+
           return (
             <div
               key={m.id}
@@ -84,14 +88,18 @@ export function Chat() {
                   {m.role === "user" ? "You" : "Saints AI"}
                 </div>
                 <div className="whitespace-pre-wrap font-body text-sm leading-relaxed">
-                  {text}
+                  {displayText}
                 </div>
               </div>
             </div>
           );
         })}
 
-        {isLoading && (
+        {isLoading && !messages.some(
+          (m) =>
+            m.role === "assistant" &&
+            m.parts.some((p) => p.type === "text" && "text" in p && (p as { type: "text"; text: string }).text)
+        ) && (
           <div className="mb-4">
             <div className="max-w-[85%] rounded-lg bg-panel px-4 py-3">
               <div className="mb-1 font-heading text-[10px] uppercase tracking-wider text-dim">

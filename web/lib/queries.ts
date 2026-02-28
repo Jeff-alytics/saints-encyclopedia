@@ -429,10 +429,10 @@ export async function getPlayer(id: string) {
 export async function getPlayerCareerPassing(playerId: string) {
   return queryOne(`
     SELECT
-      SUM(att) as att, SUM(com) as com, SUM(yds) as yds,
-      SUM(td) as td, SUM(int_thrown) as int_thrown,
-      SUM(sacked) as sacked,
-      COUNT(DISTINCT game_id) as games,
+      SUM(pp.att) as att, SUM(pp.com) as com, SUM(pp.yds) as yds,
+      SUM(pp.td) as td, SUM(pp.int_thrown) as int_thrown,
+      SUM(pp.sacked) as sacked,
+      COUNT(DISTINCT pp.game_id) as games,
       MIN(g.season) as first_season, MAX(g.season) as last_season
     FROM player_passing pp
     JOIN games g ON pp.game_id = g.game_id
@@ -444,8 +444,8 @@ export async function getPlayerCareerPassing(playerId: string) {
 export async function getPlayerCareerRushing(playerId: string) {
   return queryOne(`
     SELECT
-      SUM(att) as att, SUM(yds) as yds, SUM(td) as td,
-      COUNT(DISTINCT game_id) as games,
+      SUM(pr.att) as att, SUM(pr.yds) as yds, SUM(pr.td) as td,
+      COUNT(DISTINCT pr.game_id) as games,
       MIN(g.season) as first_season, MAX(g.season) as last_season
     FROM player_rushing pr
     JOIN games g ON pr.game_id = g.game_id
@@ -457,8 +457,8 @@ export async function getPlayerCareerRushing(playerId: string) {
 export async function getPlayerCareerReceiving(playerId: string) {
   return queryOne(`
     SELECT
-      SUM(rec) as rec, SUM(yds) as yds, SUM(td) as td,
-      COUNT(DISTINCT game_id) as games,
+      SUM(pr.rec) as rec, SUM(pr.yds) as yds, SUM(pr.td) as td,
+      COUNT(DISTINCT pr.game_id) as games,
       MIN(g.season) as first_season, MAX(g.season) as last_season
     FROM player_receiving pr
     JOIN games g ON pr.game_id = g.game_id
